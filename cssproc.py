@@ -133,4 +133,25 @@ def sub(code):
 
 if __name__ == '__main__':
 	import sys
-	sys.stdout.write(sub(''.join(sys.stdin)))
+	if len(sys.argv) == 1:
+		# filter mode
+		sys.stderr.write('filter mode\n')
+		sys.stderr.flush()
+		sys.stdout.write(sub(''.join(sys.stdin)))
+
+	else:
+		# extension replacement mode: name.ext -> name.css
+		import os
+
+		for name in sys.argv[1:]:
+			inf = open(name, 'r')
+			base, ext = os.path.splitext(name)
+			if ext.lower() != 'css':
+				out = base + os.path.extsep + 'css'
+				outf = open(out, 'w')
+				sys.stderr.write('%s -> %s\n' % (name, out))
+			else:
+				outf = sys.stdout
+				sys.stderr.write('%s -> stdout\n' % name)
+			sys.stderr.flush()
+			outf.write(sub(''.join(inf)))
