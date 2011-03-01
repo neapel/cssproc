@@ -5,11 +5,9 @@ import re
 class Stash(object):
 	''' stores arbitrary objects in a string '''
 
-	def __init__(self):
-		s_before = '<' * 10
-		s_after = '>' * 10
-		self.stashed_r = r'(?P<stashed>%s(?P<id>\d*)%s)' % (re.escape(s_before), re.escape(s_after))
-		self.rpat = s_before + '%s' + s_after
+	def __init__(self, token = '<' * 10):
+		self.stashed_r = r'(?P<stashed>%s(?P<id>\d*)%s)' % (re.escape(token), re.escape(token))
+		self.rpat = token + '%s' + token
 		self.stashed = re.compile(self.stashed_r)
 
 		self.stuff = dict()
@@ -66,12 +64,9 @@ def sub(code):
 			(?P<atstm> @[^{}]*?(;|$) )
 		|
 			(?P<atblk>
-				@[^;{}]*?
+				(?P<atsel> @[^;{}]*?)
 				{
-					(
-					[^{}]*
-					{ [^{}]* }
-					)* \s*
+					(?P<atcnt> [^{}]* )
 				}
 			)
 		|
@@ -84,6 +79,12 @@ def sub(code):
 		)
 		(?P<end> \s*)
 	''' % stash.stashed_r, re.VERBOSE)
+
+
+	def pretty(stuff):
+		sel, cnt = stuff
+		cnt = '\n'.join([ '\t' + l.strip() for l in cnt.strip().splitlines() ])
+		return '\n%s {\n%s\n}\n' % (sel, cnt)
 
 
 	# Do 2 passes per level over the code
@@ -113,18 +114,18 @@ def sub(code):
 					# nothing to process inside.
 					return stash.push((sel, cnt))
 
+			elif match.group('atblk'):
+				# unstash inner blocks
+				sel = match.group('atsel').strip()
+				cnt = stash.resolve(match.group('atcnt'), pretty)
+				return stash.push((sel, cnt))
 			else:
-				# pass through @-blocks etc.
+				# pass through rest
 				return match.group(0)
 
 		code = rec.sub(replace_inner, code)
 		if step > 1 and not found[0]:
 			break
-
-	def pretty(stuff):
-		sel, cnt = stuff
-		cnt = '\n'.join([ '\t' + l.strip() for l in cnt.strip().splitlines() ])
-		return '\n%s {\n%s\n}\n' % (sel, cnt)
 
 	return stash.resolve(code, pretty)
 
