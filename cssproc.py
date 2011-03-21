@@ -45,7 +45,7 @@ def combine(outer, inner):
 	if ',' in outer:
 		return ', '.join([combine(rule.strip(), inner) for rule in outer.split(',')])
 
-	if inner and not inner.startswith(':'):
+	if inner and not re.match('^(\.|\:)', inner):
 		inner = ' ' + inner
 	return outer + inner
 
