@@ -61,6 +61,8 @@ def sub(code):
 		(?P<stripped>
 			(?P<st> %s)
 		|
+			(?P<comment> /\* [\s\S]*? \*/)
+		|
 			(?P<atstm> @[^{}]*?(;|$) )
 		|
 			(?P<atblk>
